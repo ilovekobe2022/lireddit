@@ -1,6 +1,6 @@
 import'reflect-metadata';
 import { MikroORM }  from "@mikro-orm/core";
-import { __prod__ } from "./constants";
+import { COOKIE_NAME, __prod__ } from "./constants";
 import micoConfig from './mikro-orm.config';
 import express from 'express';
 import { ApolloServer } from 'apollo-server-express';
@@ -8,31 +8,34 @@ import { buildSchema } from "type-graphql";
 import { HelloResolver } from "./resolvers/hello";
 import { PostResolver } from "./resolvers/post";
 import { UserResolver } from './resolvers/user';
-import { MyContext } from './types';
-import * as redis from 'redis';
+// import * as redis from 'redis';
 // import redis from 'redis';
 import session from 'express-session';
 import connectRedis from 'connect-redis';
 import { ApolloServerPluginLandingPageGraphQLPlayground } from "apollo-server-core";
+import cors from 'cors';
+import Redis from "ioredis";
 
-
-
-const main = async () => {  
+const main = async () => { 
     const orm = await MikroORM.init(micoConfig);
     await orm.getMigrator().up();   //get migrator restart
 
     const app = express();
 
     const RedisStore = connectRedis(session);
-    const redisClient = redis.createClient({ legacyMode: true }) as any;
-    await redisClient.connect();
-    // console.log("redis connected",redisClient.isOpen);
+    const redis = new Redis();   
+    app.use(
+        cors({
+            origin: "http://localhost:3000",
+            credentials:true,
+        })
+    )
 
     app.use(
         session({
-        name:'qid',
+        name: COOKIE_NAME,
         store: new RedisStore({ 
-            client: redisClient,
+            client: redis as any,
             disableTTL: true,
             disableTouch: true
          }),
@@ -53,7 +56,7 @@ const main = async () => {
             resolvers: [HelloResolver,PostResolver,UserResolver],
             validate: false
         }),
-        context:({req, res}): MyContext => ({em: orm.em, req, res}),
+        context:({req, res}) => ({ em: orm.em, req, res, redis }),
         plugins: [
             ApolloServerPluginLandingPageGraphQLPlayground({
               // options
@@ -64,7 +67,10 @@ const main = async () => {
     
 
     await apolloServer.start();
-    apolloServer.applyMiddleware({app});
+    apolloServer.applyMiddleware({
+        app,
+        cors: false,
+    });
 
     app.listen(4000, ()=>{
         console.log('server started on local:4000')
