@@ -12,14 +12,12 @@ export const NavBar: React.FC<NavBarProps> = ({}) => {
     const [{fetching: logoutFetching},logout] = useLogoutMutation();
     const [{data, fetching}] = useMeQuery({
         pause: isServer(),
-    })
-    let body = null
-    body = null;
+    });
+    let body = null;
 
     // data is loading
     if (fetching){
-
-        // user not logged in
+    // user not logged in
     } else if (!data?.me){
         body = (
             <>
@@ -50,7 +48,7 @@ export const NavBar: React.FC<NavBarProps> = ({}) => {
     }
 
     return (
-    <Flex bg="tan" p={4} >
+    <Flex zIndex={1} position="sticky" top={0} bg="tan" p={4} >
         <Box ml={"auto"}>
         {body}
         </Box>
