@@ -173,7 +173,7 @@ export class UserResolver{
                      .execute();
 
             user = result.raw[0];
-        } catch (err){
+        } catch (err: any){
             if (err.code === '23505'){
                 return {
                     errors: [

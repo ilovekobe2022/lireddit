@@ -11,6 +11,7 @@ import connectRedis from 'connect-redis';
 import { ApolloServerPluginLandingPageGraphQLPlayground } from "apollo-server-core";
 import cors from 'cors';
 import Redis from "ioredis";
+import { AppDataSource } from './server';
 
 const main = async () => { 
 
@@ -24,7 +25,14 @@ const main = async () => {
     //     synchronize:true,
     //     entities:[Post,User]
     // })
-
+    
+    // createConnection solution
+    try {
+        await AppDataSource.initialize();
+     } catch (error) {
+       console.log(error)
+     }
+     await AppDataSource.runMigrations();
 
     const app = express();
 
