@@ -1,5 +1,5 @@
 import { isAuth } from "../middleware/isAuth";
-import { MyContext } from "src/types";
+import { MyContext } from "../types";
 import { Arg, Ctx, Field, FieldResolver, InputType, Int, Mutation, ObjectType, Query, Resolver, Root, UseMiddleware } from "type-graphql";
 import{Post} from "../entities/Post";
 import { AppDataSource } from "../server";
@@ -25,6 +25,36 @@ export class PostResolver{
     @FieldResolver(() => String)
     textSnippet(@Root() root: Post) {
         return root.text.slice(0,50);
+    }
+
+    @Mutation(() => Boolean)
+    @UseMiddleware(isAuth)
+    async vote(
+        @Arg("postId", () => Int) postId: number,
+        @Arg("value", () => Int) value: number,
+        @Ctx() {req}: MyContext
+    ) {
+        const isUpdoot = value !== -1;
+        const realValue = isUpdoot ? 1 : -1;
+        const { userId } = req.session;
+
+        console.log("userId: ", userId)
+
+        await AppDataSource.query(
+            `
+            START TRANSACTION;
+
+            insert into updoot ("userId", "postId", value)
+            values (${userId},${postId},${realValue});
+
+            update post
+            set points = points + ${realValue}
+            where id = ${postId};
+
+            COMMIT;
+            `
+        );
+        return true;
     }
 
     @Query(() => PaginatedPosts)
@@ -86,7 +116,7 @@ export class PostResolver{
     
         // const posts = await qb.getMany();
 
-        console.log("posts: ",posts);
+        // console.log("posts: ",posts);
 
         return { 
             posts: posts.slice(0, realLimit), 
