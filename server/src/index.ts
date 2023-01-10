@@ -34,6 +34,8 @@ const main = async () => {
      }
      await AppDataSource.runMigrations();
 
+    //  await Post.delete({});
+
     const app = express();
 
     const RedisStore = connectRedis(session);
