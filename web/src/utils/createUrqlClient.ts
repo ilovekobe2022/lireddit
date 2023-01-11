@@ -10,31 +10,29 @@ import {
   RegisterMutation
 } from "../generated/graphql";
 import Router from "next/router";
-import { FieldsOnCorrectTypeRule } from "graphql";
 
-export const errorExchange: Exchange = ({ forward }) => ops$ => {
+const errorExchange: Exchange = ({ forward }) => (ops$) => {
   return pipe(
     forward(ops$),
     tap(({ error }) => {
-      if (error?.message.includes("not authenticate")){
+      if (error?.message.includes("not authenticated")){
         Router.replace("/login");
       }
     })
   );
 };
 
-export const cursorPagination = (): Resolver => {
+const cursorPagination = (): Resolver => {
   return (_parent, fieldArgs, cache, info) => {
     const { parentKey: entityKey, fieldName } = info;
     const allFields = cache.inspectFields(entityKey);
-    console.log("allFields: ",allFields);
-    const fieldInfos = allFields.filter(info => info.fieldName === fieldName);
+    const fieldInfos = allFields.filter((info) => info.fieldName === fieldName);
     const size = fieldInfos.length;
     if (size === 0) {
       return undefined;
     }
 
-    const fieldKey = `${fieldName}(${stringifyVariables(fieldArgs)})`
+    const fieldKey = `${fieldName}(${stringifyVariables(fieldArgs)})`;
     const isItInTheCache = cache.resolve(
       cache.resolve(entityKey, fieldKey) as string,
       "posts"
@@ -42,7 +40,7 @@ export const cursorPagination = (): Resolver => {
     info.partial = !isItInTheCache;
     let hasMore = true;
     const results: string[] = [];
-    fieldInfos.forEach(fi => {
+    fieldInfos.forEach((fi) => {
       const key = cache.resolve(entityKey,fi.fieldKey) as string;
       const data = cache.resolve(key,"posts") as string[];
       const _hasMore = cache.resolve(key,"hasMore");
@@ -127,10 +125,24 @@ export const  createUrqlClient = (ssrExchange: any) => ({
           resolvers: {
             Query: {
               posts: cursorPagination(),
-            }
+            },
           },
         updates:{
           Mutation: {
+            // createPost: (_result, args, cache, info) => {
+            //   cache.invalidate("Query", "posts", {
+            //       limit: 15,
+            //   });
+            // },
+            createPost: (_result, args, cache, info) => {
+              const allFields = cache.inspectFields("Query");
+              const fieldInfos = allFields.filter(
+                (info) => info.fieldName === "posts"
+                );
+              fieldInfos.forEach((fi) => {
+                cache.invalidate("Query", "posts", fi.arguments || {});
+              });
+            },
             logout: (_result, args, cache, info) => {
               betterUpdateQuery<LogoutMutation, MeQuery>(
                 cache,
@@ -138,24 +150,26 @@ export const  createUrqlClient = (ssrExchange: any) => ({
                 _result,
                 () => ({me: null})
               )
-          },
-          login: (_result, args, cache, info) => {
-            betterUpdateQuery<LoginMutation, MeQuery>(cache, 
-              {query: MeDocument},
-              _result,
-              (result, query) => {
-                if (result.login.errors) {
-                  return query;
-                } else {
-                  return {
-                    me: result.login.user,
-                  };
+            },
+            login: (_result, args, cache, info) => {
+              betterUpdateQuery<LoginMutation, MeQuery>(
+                cache, 
+                {query: MeDocument},
+                _result,
+                (result, query) => {
+                  if (result.login.errors) {
+                    return query;
+                  } else {
+                    return {
+                      me: result.login.user,
+                    };
+                  }
                 }
-              }
               );
-          },
+            },
           register: (_result, args, cache, info) => {
-            betterUpdateQuery<RegisterMutation, MeQuery>(cache, 
+            betterUpdateQuery<RegisterMutation, MeQuery>(
+              cache, 
               {query: MeDocument},
               _result,
               (result, query) => {

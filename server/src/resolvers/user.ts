@@ -73,7 +73,10 @@ export class UserResolver{
         }
 
         const userIdNum = parseInt(userId)
-        const user = await User.findOne(userIdNum as any);
+        // const user = await User.findOne(userIdNum as any);
+        const user = await User.findOneBy({
+            id: userIdNum // where id is your column name
+        })
 
         if (!user) {
             return {
@@ -106,7 +109,11 @@ export class UserResolver{
         @Arg("email") email: string, 
         @Ctx() { redis }: MyContext
         ) {
-    const user = await User.findOne({where: {email} }); 
+    // const user = await User.findOne({where: {email} });
+    const user = await User.findOneBy({
+        email: email // where id is your column name
+    })
+    
     if (!user) {
         // the email is not in the db
         return true;
@@ -130,16 +137,21 @@ export class UserResolver{
    }
 
 
+    @Query(() => User, { nullable: true })
+    me(@Ctx() { req }: MyContext) {
+      // you are not logged in
+      if (!req.session.userId) {
+        return null;
+      }
+    // bens code
+    // return User.findOne(req.session.userId);
 
-    @Query (() => User,{nullable:true})
-    me(@Ctx() { req } : MyContext) {
-        // you are not logged in
-        if(!req.session.userId){
-            return null;
-        }
-        return User.findOneBy(req.session.userId);
+    // findOne deprecated solution
+    const user = User.findOneBy({
+        id: req.session.userId // where id is your column name
+    })
+    return user;
     }
-
     
     @Mutation(()=>UserResponse)
     async register(
@@ -204,17 +216,25 @@ export class UserResolver{
         @Arg("password") password: string,
         @Ctx() { req }: MyContext
     ): Promise<UserResponse> {
-        const user = await User.findOne(
-            usernameOrEmail.includes("@") 
-            ? { where: {email: usernameOrEmail} }
-            : { where: {username: usernameOrEmail} }
-            );
+        // const user = await User.findOne(
+        //     usernameOrEmail.includes("@") 
+        //     ? { where: {email: usernameOrEmail} }
+        //     : { where: {username: usernameOrEmail} }
+        //     );
+
+        // solution for findOne deprecated
+        const user = await User.findOneBy(
+            usernameOrEmail.includes("@")
+            ?{email: usernameOrEmail}
+            :{username: usernameOrEmail} 
+        )
+
         if (!user){
             return {
                 errors: [
                     {
                     field: "usernameOrEmail",
-                    message: "that username doesn't exsit",
+                    message: "that username doesn't exist",
                 },
               ],
             };
