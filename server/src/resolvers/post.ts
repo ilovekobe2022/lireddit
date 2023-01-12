@@ -33,7 +33,7 @@ export class PostResolver{
     async vote(
         @Arg("postId", () => Int) postId: number,
         @Arg("value", () => Int) value: number,
-        @Ctx() {req}: MyContext
+        @Ctx() { req }: MyContext
     ) {
         const isUpdoot = value !== -1;
         const realValue = isUpdoot ? 1 : -1;
@@ -86,13 +86,12 @@ export class PostResolver{
     async posts(
         @Arg("limit", () => Int) limit: number,
         @Arg("cursor", () => String, { nullable: true }) cursor: string | null,
+        @Ctx() {req}: MyContext
     ): Promise<PaginatedPosts>{
         // 20 -> 21
         const realLimit = Math.min(50, limit);
         const realLimitPlusOne = realLimit + 1;
-
-        // debug
-        const replacements: any[] = [realLimitPlusOne];
+        const replacements: any[] = [realLimitPlusOne, req.session.userId];
 
         if (cursor) {
           replacements.push(new Date(parseInt(cursor)));
@@ -108,9 +107,14 @@ export class PostResolver{
             'createdAt', u."createdAt",
             'updatedAt', u."updatedAt"
             ) creator
+          ${
+            req.session.userId 
+            ? ',(select value from updoot where "userId" = $2 and "postId" = p.id) "voteStatus"' 
+            : 'null as "voteStatus"'
+          }
           from post p
           inner join public.user u on u.id = p."creatorId"
-          ${cursor ? `where p."createdAt" < $2` : ""}
+          ${cursor ? `where p."createdAt" < $3` : ""}
           order by p."createdAt" DESC
           limit $1
           `,
