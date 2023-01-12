@@ -37,9 +37,7 @@ export class PostResolver{
         const isUpdoot = value !== -1;
         const realValue = isUpdoot ? 1 : -1;
         const { userId } = req.session;
-
-        console.log("userId: ", userId)
-
+        
         await AppDataSource.query(
             `
             START TRANSACTION;
