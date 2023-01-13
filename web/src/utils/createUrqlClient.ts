@@ -12,6 +12,7 @@ import {
 } from "../generated/graphql";
 import Router from "next/router";
 import { gql } from '@urql/core';
+import {isServer} from "./isServer";
 
 const errorExchange: Exchange = ({ forward }) => (ops$) => {
   return pipe(
@@ -113,10 +114,21 @@ const cursorPagination = (): Resolver => {
   };
 };
 
-export const  createUrqlClient = (ssrExchange: any) => ({
+export const  createUrqlClient = (ssrExchange: any, ctx: any) => {
+    let cookie = "";
+    if (isServer()) {
+      cookie = ctx.req.headers.cookie;
+    }
+  
+  return {
     url: 'http://localhost:4000/graphql',
     fetchOptions: {
       credentials: "include" as const,
+      Headers: cookie
+      ? {
+        cookie,
+      }
+      :undefined,
     },
     exchanges: [
         dedupExchange, 
@@ -148,7 +160,9 @@ export const  createUrqlClient = (ssrExchange: any) => ({
                 if (data.voteStatus === value) {
                   return;
                 }
+
                 const newPoints = (data.points as number) + (!data.voteStatus ? 1 : 2) * value;
+
                 cache.writeFragment(
                   gql`
                     fragment __ on Post {
@@ -217,4 +231,5 @@ export const  createUrqlClient = (ssrExchange: any) => ({
     ssrExchange,
     fetchExchange,
    ],
-});
+};
+};
