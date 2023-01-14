@@ -159,9 +159,17 @@ export class PostResolver{
         };
     }
 
-    @Query(() => Post, { nullable: true })
-    post(@Arg("id") id: number): Promise<Post | null> {
-        return Post.findOne(id as any);
+    // @Query(() => Post, { nullable: true })
+    // post(@Arg("id", () => Int) id: number): Promise<Post | null> {
+    //     return Post.findOne(id as any);
+    // }
+    @Query(() => Post)
+    async post(@Arg("id", () => Int) id: number): Promise<Post> {
+      const post = await Post.find({
+          where: { id: id as any },
+          relations: {creator: true}
+        });
+        return post[0];
     }
 
     @Mutation(() => Post)
