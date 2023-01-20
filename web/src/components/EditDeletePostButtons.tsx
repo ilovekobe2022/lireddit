@@ -1,3 +1,4 @@
+import React from "react";
 import { DeleteIcon, EditIcon } from "@chakra-ui/icons";
 import { Box, IconButton } from "@chakra-ui/react";
 import NextLink from "next/link";

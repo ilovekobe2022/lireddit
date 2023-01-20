@@ -12,6 +12,8 @@ import { ApolloServerPluginLandingPageGraphQLPlayground } from "apollo-server-co
 import cors from 'cors';
 import Redis from "ioredis";
 import { AppDataSource } from './server';
+import { createUserLoader } from './utils/createUserLoader';
+import { createUpdootLoader } from './utils/createUpdootLoader';
 
 const main = async () => { 
 
@@ -72,7 +74,13 @@ const main = async () => {
             resolvers: [HelloResolver,PostResolver,UserResolver],
             validate: false
         }),
-        context:({req, res}) => ({ req, res, redis }),
+        context:({req, res}) => ({ 
+            req, 
+            res, 
+            redis,
+            userLoader: createUserLoader(),
+            updootLoader: createUpdootLoader(),
+         }),
         plugins: [
             ApolloServerPluginLandingPageGraphQLPlayground({
               // options

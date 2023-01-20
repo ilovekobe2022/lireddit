@@ -1,6 +1,6 @@
 import { withUrqlClient } from 'next-urql';
 import { createUrqlClient } from "../utils/createUrqlClient";
-import { usePostsQuery } from "../generated/graphql";
+import { useMeQuery, usePostQuery, usePostsQuery } from "../generated/graphql";
 import { Layout } from "../components/Layout";
 import { Box, Button, Flex, Heading, Link, Stack,Text } from "@chakra-ui/react";
 import NextLink from "next/link";
@@ -14,13 +14,20 @@ const Index = () => {
     cursor: null as null | string, 
   });
 
-  const [{ data,fetching }] = usePostsQuery({
+  const [{ data, error, fetching }] = usePostsQuery({
     variables,
   });
 
   if (!fetching && !data) {
-    return <div>you got query failed for some reason </div>
+    return (
+      <div>
+      <div>you got query failed for some reason </div>
+      <div>{error?.message}</div>
+      </div>
+    );
   }
+
+
 
   return(
     <Layout>
@@ -33,11 +40,16 @@ const Index = () => {
           <Flex key={p.id} p={5} shadow='md' borderWidth='1px'>
             <UpdootSection post={p} />
             <Box flex={1}>
-              <NextLink href="/post/[id]" as={`/post/${p.id}`}>
-              <Link>
+              <Link 
+                as={NextLink} 
+                href={{
+                    pathname:"/post/[id]",
+                    query: {id:p.id},
+                  }}
+              >
               <Heading fontSize='xl'>{p.title}</Heading>
               </Link>
-              </NextLink>
+
               <Text>posted by {p.creator.username}</Text>
               <Flex align="center">
                 <Text flex={1} mt={4}>
@@ -71,8 +83,9 @@ const Index = () => {
           </Button>
       </Flex>
       ) : null}
-    </Layout>
+    </Layout>   
   );
-};
+
+}
 
 export default withUrqlClient(createUrqlClient ,{ ssr: true })(Index);

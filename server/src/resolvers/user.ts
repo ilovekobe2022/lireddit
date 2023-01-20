@@ -139,19 +139,22 @@ export class UserResolver{
 
     @Query(() => User, { nullable: true })
     me(@Ctx() { req }: MyContext) {
+        console.log("!req.session.userId1: ",!req.session.userId)
       // you are not logged in
       if (!req.session.userId) {
         return null;
       }
-    // bens code
-    // return User.findOne(req.session.userId);
+    // // bens code
+    // // return User.findOne(req.session.userId);
 
-    // findOne deprecated solution
-    const user = User.findOneBy({
-        id: req.session.userId // where id is your column name
-    })
-    return user;
-    }
+    // // findOne deprecated solution
+      const user = User.findOneBy({
+          id: req.session.userId // where id is your column name
+        })
+      console.log("!req.session.userId2: ",!req.session.userId)
+      return user
+    }  
+    
     
     @Mutation(()=>UserResponse)
     async register(
@@ -255,7 +258,6 @@ export class UserResolver{
         // this will set a cookie on the user
         // keep them logged in
         req.session.userId = user.id;
-
         return {
             user,
         };
