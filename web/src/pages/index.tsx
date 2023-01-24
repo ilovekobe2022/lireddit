@@ -1,6 +1,6 @@
 import { withUrqlClient } from 'next-urql';
 import { createUrqlClient } from "../utils/createUrqlClient";
-import { useMeQuery, usePostQuery, usePostsQuery } from "../generated/graphql";
+import { usePostsQuery } from "../generated/graphql";
 import { Layout } from "../components/Layout";
 import { Box, Button, Flex, Heading, Link, Stack,Text } from "@chakra-ui/react";
 import NextLink from "next/link";
@@ -65,7 +65,7 @@ const Index = () => {
             </Box>
           </Flex>
         ))}
-        </Stack>
+         </Stack>
       )}
       {data && data.posts.hasMore ? (
       <Flex>
@@ -85,7 +85,6 @@ const Index = () => {
       ) : null}
     </Layout>   
   );
-
 }
 
 export default withUrqlClient(createUrqlClient ,{ ssr: true })(Index);

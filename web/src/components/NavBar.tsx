@@ -5,6 +5,7 @@ import { useLogoutMutation, useMeQuery } from "../generated/graphql";
 import {isServer} from "../utils/isServer";
 import {useRouter} from "next/router";
 
+
 interface NavBarProps{}
 
 export const NavBar: React.FC<NavBarProps> = ({}) => {
@@ -17,9 +18,9 @@ export const NavBar: React.FC<NavBarProps> = ({}) => {
     let body = null;
 
     // data is loading
-    if (fetching){
+    if (fetching || isServer()){
     // user not logged in
-    } else if (fetching || !data?.me){
+    } else if (!data?.me){
         body = (
             <>
             <Link as={NextLink} href="/login" mr={2}>login</Link>

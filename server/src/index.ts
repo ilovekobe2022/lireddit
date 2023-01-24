@@ -41,7 +41,9 @@ const main = async () => {
     const app = express();
 
     const RedisStore = connectRedis(session);
-    const redis = new Redis();   
+    const redis = new Redis(); 
+    // app.set("mykey", "value");  
+    app.set("trust proxy", 1);
     app.use(
         cors({
             origin: "http://localhost:3000",

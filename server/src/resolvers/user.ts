@@ -139,7 +139,6 @@ export class UserResolver{
 
     @Query(() => User, { nullable: true })
     me(@Ctx() { req }: MyContext) {
-        console.log("!req.session.userId1: ",!req.session.userId)
       // you are not logged in
       if (!req.session.userId) {
         return null;
@@ -149,9 +148,8 @@ export class UserResolver{
 
     // // findOne deprecated solution
       const user = User.findOneBy({
-          id: req.session.userId // where id is your column name
+          id: 1 // where id is your column name
         })
-      console.log("!req.session.userId2: ",!req.session.userId)
       return user
     }  
     
