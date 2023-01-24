@@ -44,7 +44,7 @@ export class PostResolver{
       }
       const updoot = await updootLoader.load({
         postId: post.id, 
-        userId: parseInt (req.session.id),
+        userId: req.session.userId,
       });
 
       return updoot ? updoot.value : null;
@@ -173,6 +173,7 @@ export class PostResolver{
         });
         return post[0];
     }
+
 
     @Mutation(() => Post)
     @UseMiddleware(isAuth)
