@@ -1,38 +1,61 @@
 import'reflect-metadata';
-import { MikroORM }  from "@mikro-orm/core";
-import { __prod__ } from "./constants";
-import micoConfig from './mikro-orm.config';
+import { COOKIE_NAME, __prod__ } from "./constants";
 import express from 'express';
 import { ApolloServer } from 'apollo-server-express';
 import { buildSchema } from "type-graphql";
 import { HelloResolver } from "./resolvers/hello";
 import { PostResolver } from "./resolvers/post";
 import { UserResolver } from './resolvers/user';
-import { MyContext } from './types';
-import * as redis from 'redis';
-// import redis from 'redis';
 import session from 'express-session';
 import connectRedis from 'connect-redis';
 import { ApolloServerPluginLandingPageGraphQLPlayground } from "apollo-server-core";
+import cors from 'cors';
+import Redis from "ioredis";
+import { AppDataSource } from './server';
+import { createUserLoader } from './utils/createUserLoader';
+import { createUpdootLoader } from './utils/createUpdootLoader';
 
+const main = async () => { 
 
+    // Ben's code
+    // const conn = await createConnection ({
+    //     type: 'postgres',
+    //     database: 'lireddit2',
+    //     username:'postgres',
+    //     password:'postgres',
+    //     logging: true,
+    //     synchronize:true,
+    //     entities:[Post,User]
+    // })
+    
+    // createConnection solution
+    try {
+        await AppDataSource.initialize();
+     } catch (error) {
+       console.log(error)
+     }
+     await AppDataSource.runMigrations();
 
-const main = async () => {  
-    const orm = await MikroORM.init(micoConfig);
-    await orm.getMigrator().up();   //get migrator restart
+    //  await Post.delete({});
 
     const app = express();
 
     const RedisStore = connectRedis(session);
-    const redisClient = redis.createClient({ legacyMode: true }) as any;
-    await redisClient.connect();
-    // console.log("redis connected",redisClient.isOpen);
+    const redis = new Redis(); 
+    // app.set("mykey", "value");  
+    app.set("trust proxy", 1);
+    app.use(
+        cors({
+            origin: "http://localhost:3000",
+            credentials:true,
+        })
+    )
 
     app.use(
         session({
-        name:'qid',
+        name: COOKIE_NAME,
         store: new RedisStore({ 
-            client: redisClient,
+            client: redis as any,
             disableTTL: true,
             disableTouch: true
          }),
@@ -53,7 +76,13 @@ const main = async () => {
             resolvers: [HelloResolver,PostResolver,UserResolver],
             validate: false
         }),
-        context:({req, res}): MyContext => ({em: orm.em, req, res}),
+        context:({req, res}) => ({ 
+            req, 
+            res, 
+            redis,
+            userLoader: createUserLoader(),
+            updootLoader: createUpdootLoader(),
+         }),
         plugins: [
             ApolloServerPluginLandingPageGraphQLPlayground({
               // options
@@ -64,7 +93,10 @@ const main = async () => {
     
 
     await apolloServer.start();
-    apolloServer.applyMiddleware({app});
+    apolloServer.applyMiddleware({
+        app,
+        cors: false,
+    });
 
     app.listen(4000, ()=>{
         console.log('server started on local:4000')
@@ -74,5 +106,3 @@ const main = async () => {
 main().catch((err) => {
     console.error(err);
 });
-
-
